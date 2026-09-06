@@ -1,0 +1,105 @@
+# ============================================================
+# Python & Bytecode
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ============================================================
+# Virtual Environments
+# ============================================================
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# ============================================================
+# IDEs & System Files
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+*.bak
+*.tmp
+*.temp
+
+# ============================================================
+# Test Scripts & Generated Sample Files
+# ============================================================
+test_*.py
+*_test.py
+create_test_sample.py
+
+# Ignore test executables and binary sample files
+*.exe
+*.dll
+*.sys
+*.bin
+*.sample
+*.pe
+*.dat
+*.ocx
+*.scr
+
+# Feedback cache / captured runtime test samples
+data/feedback/pending/*
+data/feedback/verified/*
+!data/feedback/pending/.gitkeep
+!data/feedback/verified/.gitkeep
+
+# ============================================================
+# Models Directory (Candidate & Staged Models)
+# ============================================================
+models/
+models/*
+!models/.gitkeep
+
+# ============================================================
+# Model Weights, Binary Artifacts & Promoted Files
+# ============================================================
+*.pth
+*.pt
+*.ckpt
+*.h5
+*.onnx
+
+# Pickles, NumPy arrays & Heavy Preprocessing Artifacts
+*.pkl
+*.pickle
+*.npy
+*.npz
+
+# Promoted model folder artifacts & Training data artifacts
+inference/v*_Promoted/*.pth
+inference/v*_Promoted/*.pkl
+inference/v*_Promoted/*.pickle
+inference/v*_Promoted/*.npy
+inference/v*_Promoted/Training artifacts/
+inference/v*_Promoted/Training artifacts/*
+inference/ACTIVE_MODEL.json.tmp

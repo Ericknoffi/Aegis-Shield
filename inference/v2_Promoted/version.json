@@ -1,0 +1,16 @@
+{
+    "model_version": "v2",
+    "status": "candidate_promoted",
+    "input_features": 2381,
+    "processed_features": 2332,
+    "selected_features": 250,
+    "threshold": 0.55,
+    "accuracy": 0.995388,
+    "precision": 0.993383,
+    "recall": 0.995811,
+    "f1": 0.994596,
+    "false_negatives": 24,
+    "false_positives": 38,
+    "roc_auc": 0.999481,
+    "pr_auc": 0.999407
+}
