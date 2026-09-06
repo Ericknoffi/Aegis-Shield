@@ -35,7 +35,7 @@ env.bak/
 venv.bak/
 
 # ============================================================
-# IDEs & System Files
+# IDEs & OS Files
 # ============================================================
 .vscode/
 .idea/
@@ -48,15 +48,16 @@ desktop.ini
 *.bak
 *.tmp
 *.temp
+*.log
 
 # ============================================================
-# Test Scripts & Generated Sample Files
+# Test Scripts & Generated Binary Samples
 # ============================================================
 test_*.py
 *_test.py
 create_test_sample.py
 
-# Ignore test executables and binary sample files
+# Ignored binary and test payload files
 *.exe
 *.dll
 *.sys
@@ -67,39 +68,31 @@ create_test_sample.py
 *.ocx
 *.scr
 
-# Feedback cache / captured runtime test samples
+# Feedback runtime samples (maintain directory via .gitkeep)
 data/feedback/pending/*
 data/feedback/verified/*
 !data/feedback/pending/.gitkeep
 !data/feedback/verified/.gitkeep
 
 # ============================================================
-# Models Directory (Candidate & Staged Models)
+# Private Training Artifacts, Dataset Splits & Debug Dumps
 # ============================================================
-models/
+# Internal training split indices (train/val/test split arrays)
+*.npy
+*.npz
+**/Training artifacts/
+**/Training artifacts/*
+Training artifacts/
+
+# Internal training debug files
+**/actual_top250_features_*.pkl
+**/processed_feature_names.pkl
+actual_top250_features_*.pkl
+processed_feature_names.pkl
+
+# Retraining candidate staging models (models/ folder kept clean)
 models/*
 !models/.gitkeep
 
-# ============================================================
-# Model Weights, Binary Artifacts & Promoted Files
-# ============================================================
-*.pth
-*.pt
-*.ckpt
-*.h5
-*.onnx
-
-# Pickles, NumPy arrays & Heavy Preprocessing Artifacts
-*.pkl
-*.pickle
-*.npy
-*.npz
-
-# Promoted model folder artifacts & Training data artifacts
-inference/v*_Promoted/*.pth
-inference/v*_Promoted/*.pkl
-inference/v*_Promoted/*.pickle
-inference/v*_Promoted/*.npy
-inference/v*_Promoted/Training artifacts/
-inference/v*_Promoted/Training artifacts/*
+# Temporary pointer swap file
 inference/ACTIVE_MODEL.json.tmp
