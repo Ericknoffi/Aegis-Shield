@@ -138,6 +138,12 @@ A candidate model cannot displace the reigning production Dragon without conquer
 > [!IMPORTANT]
 > **Zero-Regression Rule**: If an aspirant candidate fails even 1 of the 4 trials, promotion is aborted immediately. The artifact remains quarantined in `models/v{N}_Candidate/` for diagnostic review and will **never** touch production inference paths.
 
+### 🖥️ Executive Promotion Approval Modal
+
+When an aspirant candidate model conquers all 4 trials without regression, the system launches the **Dragon Gate Ascension Modal** enabling security leads to inspect the exact mathematical deltas and authorize production promotion:
+
+![Dragon Gate Promotion Approval Dialog](./assets/dragon_gate_promotion_dialog.png)
+
 ---
 
 ## 🤖 Automation vs. Human-in-the-Loop Guide
