@@ -143,7 +143,7 @@ A candidate model cannot displace the reigning production Dragon without conquer
 When an aspirant candidate model conquers all 4 trials without regression, the system launches the **Dragon Gate Ascension Modal** enabling security leads to inspect the exact mathematical deltas and authorize production promotion:
 
 <p align="center">
-  <img src="assets/dragon_gate_promotion_dialog.jpg" alt="Dragon Gate Promotion Approval Dialog" width="650"/>
+  <img src="assets/dragon_gate_promotion_dialog.png" alt="Dragon Gate Promotion Approval Dialog" width="650"/>
 </p>
 
 ---
