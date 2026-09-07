@@ -215,11 +215,14 @@ class PEDetectionPipeline:
         total_time = (time.perf_counter() - t_start) * 1000
 
         # 5. Feedback / Quarantine Log
-        self.collector.save_prediction(
+        save_res = self.collector.save_prediction(
             raw_features=features,
             prediction=pred_label,
             probability=probability,
-            threshold=threshold
+            threshold=threshold,
+            sha256=file_sha256,
+            file_path=file_path,
+            file_name=file_name
         )
 
         # 6. Display Clean Verdict
@@ -232,7 +235,7 @@ class PEDetectionPipeline:
 
         print(f"  📊 Maliciousness: {probability * 100:.2f}% (Threshold: {threshold * 100:.1f}%)")
         print(f"  ⚡ Latency:       Total: {total_time:.1f}ms (Extract: {ext_duration:.1f}ms | Infer: {inf_duration:.1f}ms)")
-        print(f"  💾 Feedback DB:   Logged to data/feedback/pending")
+        print(f"  💾 Feedback DB:   Logged to data/feedback/pending/{save_res['category']}/{save_res['sample_id']}.npz")
         print("=" * 75 + "\n")
 
 

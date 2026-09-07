@@ -246,8 +246,10 @@ def load_verified_feedback():
         glob.glob(
             os.path.join(
                 VERIFIED_DIR,
+                "**",
                 "*.npz"
-            )
+            ),
+            recursive=True
         )
     )
 

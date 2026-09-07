@@ -69,10 +69,10 @@ create_test_sample.py
 *.scr
 
 # Feedback runtime samples (maintain directory via .gitkeep)
-data/feedback/pending/*
-data/feedback/verified/*
-!data/feedback/pending/.gitkeep
-!data/feedback/verified/.gitkeep
+data/feedback/**/*.npz
+data/feedback/*.npz
+!data/feedback/**/.gitkeep
+!data/feedback/.gitkeep
 
 # ============================================================
 # Private Training Artifacts, Dataset Splits & Debug Dumps

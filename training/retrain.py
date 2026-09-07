@@ -332,13 +332,12 @@ def load_verified_feedback():
     feature_rows = []
     labels = []
 
-    files = sorted(
-        [
-            f
-            for f in os.listdir(FEEDBACK_DIR)
-            if f.endswith(".npz")
-        ]
-    )
+    files = []
+    for root, _, filenames in os.walk(FEEDBACK_DIR):
+        for f in filenames:
+            if f.endswith(".npz"):
+                files.append(os.path.join(root, f))
+    files.sort()
 
     print()
     print("=" * 70)
@@ -347,12 +346,8 @@ def load_verified_feedback():
 
     print("Verified files:", len(files))
 
-    for filename in files:
-
-        path = os.path.join(
-            FEEDBACK_DIR,
-            filename
-        )
+    for path in files:
+        filename = os.path.basename(path)
 
         try:
 

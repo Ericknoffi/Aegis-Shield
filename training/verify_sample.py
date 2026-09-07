@@ -3,7 +3,10 @@ import os
 import json
 import subprocess
 
-from feedback_collector import FeedbackCollector
+try:
+    from training.feedback_collector import FeedbackCollector
+except ImportError:
+    from feedback_collector import FeedbackCollector
 
 
 # ============================================================
@@ -203,170 +206,93 @@ def run_training_pipeline():
 # MAIN
 # ============================================================
 
-if len(sys.argv) != 3:
-
-    print("Usage:")
-    print(
-        "python training\\verify_sample.py "
-        "<sample_id> <label>"
-    )
-
-    print()
-    print("label:")
-    print("  0 = Benign")
-    print("  1 = Malware")
-
-    sys.exit(1)
-
-
-sample_id = sys.argv[1]
-
-
-# ============================================================
-# VALIDATE LABEL
-# ============================================================
-
-try:
-
-    true_label = int(
-        sys.argv[2]
-    )
-
-except ValueError:
-
-    print("Label must be 0 or 1.")
-    sys.exit(1)
-
-
-if true_label not in [0, 1]:
-
-    print("Label must be 0 or 1.")
-    sys.exit(1)
-
-
-# ============================================================
-# VERIFY SAMPLE
-# ============================================================
-
-collector = FeedbackCollector()
-
-try:
-
-    result = collector.verify_sample(
-        sample_id=sample_id,
-        true_label=true_label
-    )
-
-except Exception as e:
-
-    print()
-    print("Verification failed:")
-    print(e)
-
-    sys.exit(1)
-
-
-print()
-print("=" * 60)
-print("SAMPLE VERIFIED")
-print("=" * 60)
-
-print(
-    "Sample ID:",
-    sample_id
-)
-
-print(
-    "True label:",
-    "Malware" if true_label == 1 else "Benign"
-)
-
-print(
-    "Verified samples:",
-    collector.count_verified()
-)
-
-print("=" * 60)
-
-
-# ============================================================
-# CHECK RETRAINING THRESHOLD
-# ============================================================
-
-verified_count = collector.count_verified()
-
-state = load_retrain_state()
-
-last_processed_count = state.get(
-    "last_processed_verified_count",
-    0
-)
-
-new_verified_samples = (
-    verified_count -
-    last_processed_count
-)
-
-print()
-print(
-    "New verified samples since last training:",
-    new_verified_samples
-)
-
-print(
-    "Retraining threshold:",
-    RETRAIN_THRESHOLD
-)
-
-
-# ============================================================
-# TRIGGER RETRAINING
-# ============================================================
-
-if new_verified_samples >= RETRAIN_THRESHOLD:
-
-    print()
-    print(
-        "Retraining threshold reached."
-    )
-
-    pipeline_success = run_training_pipeline()
-
-    # --------------------------------------------------------
-    # Mark this batch as processed regardless of whether
-    # promotion succeeded.
-    #
-    # The verified samples remain available as replay data.
-    # --------------------------------------------------------
-
-    save_retrain_state(
-        verified_count
-    )
-
-    if pipeline_success:
-
-        print()
+def main():
+    if len(sys.argv) != 3:
+        print("Usage:")
         print(
-            "Training cycle completed."
+            "python training\\verify_sample.py "
+            "<sample_id> <label>"
         )
+        print()
+        print("label:")
+        print("  0 = Benign")
+        print("  1 = Malware")
+        sys.exit(1)
 
+    sample_id = sys.argv[1]
+
+    # --------------------------------------------------------
+    # VALIDATE LABEL
+    # --------------------------------------------------------
+    try:
+        true_label = int(sys.argv[2])
+    except ValueError:
+        print("Label must be 0 or 1.")
+        sys.exit(1)
+
+    if true_label not in [0, 1]:
+        print("Label must be 0 or 1.")
+        sys.exit(1)
+
+    # --------------------------------------------------------
+    # VERIFY SAMPLE
+    # --------------------------------------------------------
+    collector = FeedbackCollector()
+
+    try:
+        result = collector.verify_sample(
+            sample_id=sample_id,
+            true_label=true_label
+        )
+    except Exception as e:
+        print()
+        print("Verification failed:")
+        print(e)
+        sys.exit(1)
+
+    print()
+    print("=" * 60)
+    print("SAMPLE VERIFIED")
+    print("=" * 60)
+    print("Sample ID:", result.get("sample_id", sample_id))
+    print("True label:", f"{'Malware' if true_label == 1 else 'Benign'} ({result.get('category', 'unknown')})")
+    print("Moved to:", result.get("filepath", "data/feedback/verified/"))
+    print("Total verified samples:", collector.count_verified())
+    print("=" * 60)
+
+    # --------------------------------------------------------
+    # CHECK RETRAINING THRESHOLD
+    # --------------------------------------------------------
+    verified_count = collector.count_verified()
+    state = load_retrain_state()
+    last_processed_count = state.get("last_processed_verified_count", 0)
+    new_verified_samples = verified_count - last_processed_count
+
+    print()
+    print("New verified samples since last training:", new_verified_samples)
+    print("Retraining threshold:", RETRAIN_THRESHOLD)
+
+    # --------------------------------------------------------
+    # TRIGGER RETRAINING
+    # --------------------------------------------------------
+    if new_verified_samples >= RETRAIN_THRESHOLD:
+        print()
+        print("Retraining threshold reached.")
+        pipeline_success = run_training_pipeline()
+
+        save_retrain_state(verified_count)
+
+        if pipeline_success:
+            print()
+            print("Training cycle completed.")
+        else:
+            print()
+            print("Training cycle did not produce a new production model.")
     else:
-
+        remaining = RETRAIN_THRESHOLD - new_verified_samples
         print()
-        print(
-            "Training cycle did not produce "
-            "a new production model."
-        )
+        print(f"{remaining} more verified samples needed before automatic retraining.")
 
-else:
 
-    remaining = (
-        RETRAIN_THRESHOLD -
-        new_verified_samples
-    )
-
-    print()
-    print(
-        f"{remaining} more verified samples "
-        "needed before automatic retraining."
-    )
+if __name__ == "__main__":
+    main()
