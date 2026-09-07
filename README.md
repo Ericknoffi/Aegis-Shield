@@ -3,17 +3,19 @@
 [![Engine-ONNX](https://img.shields.io/badge/Engine-ONNX_Runtime_C++-101010?style=flat-square&logo=onnx&logoColor=white)](https://onnxruntime.ai/)
 [![Inference-Latency](https://img.shields.io/badge/Latency-<0.8ms-101010?style=flat-square&logo=speedtest&logoColor=00FF66)]()
 [![Validation-Dragon_Gate](https://img.shields.io/badge/Protocol-龙门_Dragon_Gate-101010?style=flat-square&logo=matrix&logoColor=orange)]()
+[![Verification-Two_Step](https://img.shields.io/badge/Verification-Keyless_Two--Step-101010?style=flat-square&logo=shield&logoColor=00FF66)]()
 [![Safety-Atomic_Swap](https://img.shields.io/badge/Deployment-Zero--Downtime_Atomic-101010?style=flat-square)]()
 
-An enterprise-grade, real-time PE malware detection and continual learning pipeline. Streams file system events, extracts 2,381 static PE features, executes sub-millisecond inference via an optimized **C++ ONNX Runtime engine** (with PyTorch fallback), captures low-confidence telemetry into feedback pools, safely retrains aspirant candidate models, tests them against the **Dragon Gate (龙门)** trial protocol, and deploys zero-downtime atomic pointer swaps.
+An enterprise-grade, real-time PE malware detection and continual learning pipeline. Monitors filesystem downloads, extracts 2,381 static PE features, performs sub-millisecond neural network inference via an optimized **C++ ONNX Runtime engine** (with PyTorch fallback), captures low-confidence telemetry into categorized feedback pools, verifies ground truth through a **Keyless Two-Step Verification Engine** (Authenticode + native Windows Defender), retrains aspirant candidates via **Experience Replay**, subjects them to the **Dragon Gate (龙门)** trial protocol, and deploys zero-downtime atomic pointer swaps.
 
-```
+```text
 [ SYSTEM TELEMETRY & SPECS ]
 ├─ Core Engine   : C++ ONNX Runtime (v1.16+) / PyTorch Fallback
 ├─ Feature Plane : 2,381-D Raw -> 2,332 Non-Const -> Top-250 Selected (LIEF + pefile)
 ├─ Latency       : ~0.74 ms / binary (Inference: 0.12ms | Probe: 0.04ms)
 ├─ Classification: Binary Threshold @ 0.55 [Benign: 0 | Malicious: 1]
-├─ Safety Layer  : Atomic pointer swaps (`ACTIVE_MODEL.json`) + Experience Replay
+├─ Verification  : Keyless Two-Step (Step 1: Authenticode PKCS#7 | Step 2: Windows Defender CLI)
+├─ Safety Layer  : Atomic pointer swaps (`ACTIVE_MODEL.json`) + Experience Replay Memory
 └─ Gatekeeper    : 4-Trial Dragon Gate (龙门) Zero-Regression Protocol
 ```
 
@@ -21,7 +23,7 @@ An enterprise-grade, real-time PE malware detection and continual learning pipel
 
 ## ⚡ Architecture Flow
 
-```
+```text
 [ Inbound Download ] ──> [ pe_download_watchdog.py ] (MZ Magic Probe < 0.05ms)
                                │ (Valid PE)
                                ▼
@@ -32,19 +34,27 @@ An enterprise-grade, real-time PE malware detection and continual learning pipel
                                │
                 ┌──────────────┴──────────────┐
                 ▼                             ▼
-     [ High Confidence ]             [ Low Confidence / Ambiguous ]
-     (Alert / Allow)                          │
+     [ High Confidence Alert ]       [ Telemetry Ingestion ]
+     (Allow / Block Alert)                    │
                                               ▼
                                      [ data/feedback/pending/ ]
                                      ├── [ benign/ ]  (Pred: Benign)
                                      └── [ malware/ ] (Pred: Malware)
                                               │
-                                              ▼ (training/verify_sample.py <id> <0|1>)
+                                              ▼ (training/batch_verify.py --two-step)
+                                     [ 🛡️ TWO-STEP VERIFICATION ]
+                                     ├─ Step 1: Authenticode Digital Signature
+                                     └─ Step 2: Native Windows Defender CLI
+                                              │
+                                              ▼ (Ground-Truth Verified)
                                      [ data/feedback/verified/ ]
                                      ├── [ benign/ ]  (True: 0)
                                      └── [ malware/ ] (True: 1)
                                               │
-                                              ▼ (training/retrain.py)
+                                              ▼ (Threshold: 100 Verified Samples)
+                                     [ training/retrain.py ] (Experience Replay)
+                                              │
+                                              ▼ (Aspirant Candidate Born)
                                      [ models/v{N}_Candidate/ ]
                                               │
                                               ▼ (training/evaluate.py)
@@ -61,14 +71,52 @@ An enterprise-grade, real-time PE malware detection and continual learning pipel
 
 | Component | Target File | Role & Performance Profile |
 | :--- | :--- | :--- |
-| **Download Watchdog** | `pe_download_watchdog.py` | Real-time filesystem observer. Filters non-PEs via `<0.05ms` MZ magic probe. Resolves `.crdownload`/`.part` lock contention via async backoff queues. |
-| **Static Extractor** | `extraction/pe_extractor.py` | Generates 2,381 raw dimensions (PE headers, section entropy distributions, byte histograms, imports/exports). Applies 2,332 mask & Top-250 matrix. |
-| **Inference Engine** | `inference/predictor.py` | Production ONNX Runtime engine (`malware_mlp_top250.onnx`). Sub-millisecond execution. Dynamic active-version resolution with PyTorch fallback. |
-| **Feedback Ingestion** | `training/feedback_collector.py` | Serializes ambiguous samples (`0.40 ≤ P(malware) ≤ 0.70`) into compressed `.npz` feature bundles with contextual metadata. |
-| **Sample Verifier** | `training/verify_sample.py` | CLI triage tool for sandboxed / manual labeling (`0 = Benign`, `1 = Malware`). Moves samples from `pending/` to `verified/`. |
-| **Continual Retrainer**| `training/retrain.py` | Executes experience replay fine-tuning (blending verified feedback with historical baselines) and births candidate artifacts in `models/v{N}_Candidate/`. |
-| **Gate Evaluator** | `training/evaluate.py` | **Dragon Gate Trial Engine**. Strict benchmarking against reigning production model. Writes `DRAGON_GATE_ASCENDED.json` or `DRAGON_GATE_FALLEN.json`. |
-| **Promotion Core** | `training/promote.py` | Executes atomic switchover into `inference/v{N}_Promoted/`, updates `ACTIVE_MODEL.json` with zero-downtime, and provides UI approval modals. |
+| **Download Watchdog** | `pe_download_watchdog.py` | Real-time filesystem observer. Filters non-PEs via `<0.05ms` MZ probe. Handles `.crdownload`/`.part` lock releases with async worker queues. |
+| **Static Extractor** | `extraction/pe_extractor.py` | Extracts 2,381 static dimensions (PE headers, section entropy distributions, byte histograms, imports/exports). Applies 2,332 mask & Top-250 matrix. |
+| **Inference Engine** | `inference/predictor.py` | High-throughput ONNX Runtime engine (`malware_mlp_top250.onnx`). Sub-millisecond latency. Dynamic active-version resolution with PyTorch fallback. |
+| **Feedback Collector** | `training/feedback_collector.py` | Serializes telemetry and feature vectors into categorized directories (`pending/benign` and `pending/malware`) with SHA-256 and path metadata. |
+| **Two-Step Verifier** | `training/two_step_verifier.py` | **100% Keyless Ground-Truth Engine**. Step 1 checks Authenticode certificates; Step 2 runs local Windows Defender (`MpCmdRun.exe`). |
+| **Batch Triage CLI** | `training/batch_verify.py` | Feedback dashboard (`--status`), Keyless Two-Step verification (`--two-step`), and bulk-labeling manager. |
+| **Sample Verifier** | `training/verify_sample.py` | Single-sample CLI triage utility for manual / sandbox ground-truth labeling (`0 = Benign`, `1 = Malware`). |
+| **Continual Retrainer**| `training/retrain.py` | Experience replay fine-tuner (blends verified feedback with historical baselines) and births candidates in `models/v{N}_Candidate/`. |
+| **Gate Evaluator** | `training/evaluate.py` | **Dragon Gate Trial Engine**. Strict mathematical benchmarking against reigning production model across 4 zero-regression trials. |
+| **Promotion Core** | `training/promote.py` | Executes atomic pointer switchover into `inference/v{N}_Promoted/`, updates `ACTIVE_MODEL.json` with zero-downtime, and provides UI approval modals. |
+
+---
+
+## 🛡️ Keyless Two-Step Ground-Truth Verification
+
+To eliminate label noise and prevent data poisoning without requiring external API keys or cloud uploads, the system implements a **Two-Step Verification Pipeline**:
+
+```text
+[ Pending Sample (.npz) ]
+          │
+          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 1: Authenticode Digital Certificate Check (LIEF)      │
+│  - Offline & Sub-millisecond                                │
+│  - Checks PKCS#7 signatures against verified trusted vendors│
+│    (Microsoft, Google, Apple, Valve, Python, Adobe, etc.)   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                ┌──────────────┴──────────────┐
+                ▼                             ▼
+       [ Valid & Trusted ]           [ Unsigned / Untrusted ]
+       ==> VERIFIED: BENIGN (0)               │
+       (Zero network, 0 API keys)             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  STEP 2: Native Windows Defender CLI Engine (MpCmdRun.exe)  │
+│  - Built-in to Windows (100% Free, No Sign-up, No API Key)  │
+│  - Scans binary with Microsoft's full Antivirus definitions │
+│  - Exit code 0 = Clean (Benign: 0)                          │
+│  - Exit code 2 = Threat Detected (Malware: 1)               │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                ┌──────────────┴──────────────┐
+                ▼                             ▼
+       [ Clean Scan (0) ]            [ Threat Flagged (2) ]
+       ==> VERIFIED: BENIGN (0)      ==> VERIFIED: MALWARE (1)
+```
 
 ---
 
@@ -76,7 +124,7 @@ An enterprise-grade, real-time PE malware detection and continual learning pipel
 
 A candidate model cannot displace the reigning production Dragon without conquering all 4 mathematical gates simultaneously:
 
-```
+```text
 ┌───────┬───────────────────┬───────────────────────────────────────┬───────────────────────────────┐
 │ TRIAL │ METRIC            │ MATHEMATICAL CRITERION                │ SYSTEM OBJECTIVE              │
 ├───────┼───────────────────┼───────────────────────────────────────┼───────────────────────────────┤
@@ -88,7 +136,42 @@ A candidate model cannot displace the reigning production Dragon without conquer
 ```
 
 > [!IMPORTANT]
-> **Zero-Regression Rule**: If an aspirant candidate fails even 1 of the 4 trials, promotion is aborted immediately. The artifact is retained in `models/v{N}_Candidate/` for diagnostic review and will **never** touch production inference paths.
+> **Zero-Regression Rule**: If an aspirant candidate fails even 1 of the 4 trials, promotion is aborted immediately. The artifact remains quarantined in `models/v{N}_Candidate/` for diagnostic review and will **never** touch production inference paths.
+
+---
+
+## 🤖 Automation vs. Human-in-the-Loop Guide
+
+```text
+[ Inbound Download ] ────────> 100% AUTOMATIC (Watchdog + Feature Extraction)
+           │
+           ▼
+[ Sub-ms AI Inference ] ─────> 100% AUTOMATIC (ONNX C++ Engine Alert)
+           │
+           ▼
+[ Two-Step Verification ] ───> 100% AUTOMATIC (Authenticode + Local Defender)
+           │
+           ├─ [ Inconclusive? ] ──> 👤 HUMAN TOUCHPOINT 1 (Single-command Triage)
+           ▼
+[ Continual Retraining ] ────> 100% AUTOMATIC (Experience Replay Trainer)
+           │
+           ▼
+[ 🐉 Dragon Gate Trial ] ────> 100% AUTOMATIC (4 Mathematical Gates)
+           │
+           ▼
+[ Atomic Deployment ] ───────> 👤 HUMAN TOUCHPOINT 2 (Modal Approval or `--yes`)
+```
+
+| Lifecycle Stage | Automation Level | Notes |
+| :--- | :--- | :--- |
+| **Download Ingestion & Inference** | 100% Autonomous | `pe_download_watchdog.py` & ONNX Engine. |
+| **Feedback Categorization** | 100% Autonomous | `training/feedback_collector.py` routes to `benign/` and `malware/`. |
+| **Two-Step Verification** | 100% Autonomous | `training/batch_verify.py --two-step` (Authenticode + Defender). |
+| **Inconclusive Binary Triage** | 👤 **Human Needed** | Used only if an unsigned binary is unknown to Defender (`verify_sample.py`). |
+| **Continual Replay Retraining** | 100% Autonomous | `training/retrain.py` triggers when verified pool reaches 100 samples. |
+| **Dragon Gate Benchmark Evaluation** | 100% Autonomous | `training/evaluate.py` tests all 4 math trials. |
+| **Production Promotion Approval** | 👤 **Human Decision** | Modal UI approval dialog (pass `--yes` for 100% zero-touch CI/CD). |
+| **Atomic Zero-Downtime Deployment** | 100% Autonomous | `training/promote.py` swaps `ACTIVE_MODEL.json` with zero downtime. |
 
 ---
 
@@ -96,12 +179,14 @@ A candidate model cannot displace the reigning production Dragon without conquer
 
 ```text
 .
+├── .gitignore                       # Git ignore rules (excludes weights, bytecodes, runtime dumps)
+├── README.md                        # Project documentation & architecture specs
+├── requirements.txt                 # Dependencies (ONNX Runtime, PyTorch, LIEF, pefile, etc.)
 ├── pe_download_watchdog.py          # Real-time PE download observer & inference hook
-├── requirements.txt                 # Pinned dependencies (ONNX Runtime, PyTorch, LIEF, etc.)
 ├── extraction/
 │   └── pe_extractor.py              # 2,381-D PE static feature extraction pipeline
 ├── inference/
-│   ├── ACTIVE_MODEL.json            # Dynamic atomic pointer to active model version
+│   ├── ACTIVE_MODEL.json            # Dynamic atomic pointer to active production model
 │   ├── predictor.py                 # Low-latency ONNX Runtime / PyTorch inference engine
 │   └── v2_Promoted/                 # Production Reigning Dragon (Active)
 │       ├── malware_mlp_top250.onnx  # Optimized C++ ONNX graph
@@ -111,7 +196,7 @@ A candidate model cannot displace the reigning production Dragon without conquer
 │       ├── top250_positions.pkl     # Top 250 feature selection index array
 │       ├── model_config.json        # Hyperparameters and threshold bounds
 │       └── version.json             # Build metadata & lineage tracking
-├── models/                          # Staged candidate models & evaluation results
+├── models/                          # Staged candidate models & evaluation artifacts
 │   ├── v1_Artifact/                 # Baseline version release bundle
 │   └── v2_Artifact/                 # Evaluated candidate version bundle
 ├── data/
@@ -123,10 +208,10 @@ A candidate model cannot displace the reigning production Dragon without conquer
 │           ├── benign/              # Confirmed Benign (0) (.npz)
 │           └── malware/             # Confirmed Malware (1) (.npz)
 └── training/
-    ├── feedback_collector.py        # Ambiguity detection & sample serialization
-    ├── two_step_verifier.py         # Authenticode & VirusTotal two-step verification engine
-    ├── verify_sample.py             # Single-sample CLI labeling utility
+    ├── feedback_collector.py        # Telemetry ingestion & categorized serialization
+    ├── two_step_verifier.py         # Authenticode & Windows Defender two-step verification engine
     ├── batch_verify.py              # Bulk / Automated batch verification & dashboard
+    ├── verify_sample.py             # Single-sample CLI triage utility
     ├── retrain.py                   # Continual fine-tuner with experience replay
     ├── evaluate.py                  # Dragon Gate benchmark evaluator
     └── promote.py                   # Atomic promotion engine with modal UI dialogs
@@ -139,7 +224,8 @@ A candidate model cannot displace the reigning production Dragon without conquer
 ### 1. Installation
 ```bash
 # Clone and enter workspace
-cd "BODMAS"
+git clone https://github.com/Ericknoffi/Aegis-Shield.git
+cd Aegis-Shield
 
 # Install pinned dependencies
 pip install -r requirements.txt
@@ -156,7 +242,7 @@ python pe_download_watchdog.py
 # Display feedback dashboard (pending vs verified breakdown)
 python training/batch_verify.py --status
 
-# 🛡️ Two-Step Keyless Verification (Step 1: Authenticode -> Step 2: Windows Defender CLI)
+# 🛡️ Run Keyless Two-Step Verification (Step 1: Authenticode -> Step 2: Windows Defender CLI)
 python training/batch_verify.py --two-step
 
 # Optional: Run with cloud VirusTotal API fallback
@@ -167,7 +253,7 @@ python training/batch_verify.py --auto-predicted
 python training/batch_verify.py --category benign --label 0
 python training/batch_verify.py --category malware --label 1
 
-# Single-sample manual verification (0 = Benign, 1 = Malware)
+# Single-sample manual triage (0 = Benign, 1 = Malware)
 python training/verify_sample.py <sample_id> 0
 python training/verify_sample.py <sample_id> 1
 ```
